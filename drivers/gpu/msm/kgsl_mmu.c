@@ -768,8 +768,6 @@ kgsl_mmu_unmap(struct kgsl_pagetable *pagetable,
 	 */
 	if (!(memdesc->priv & KGSL_MEMDESC_GLOBAL))
 		memdesc->gpuaddr = 0;
-         else
-         kgsl_mmu_put_gpuaddr(pagetable, memdesc);
 	return 0;
 }
 EXPORT_SYMBOL(kgsl_mmu_unmap);
