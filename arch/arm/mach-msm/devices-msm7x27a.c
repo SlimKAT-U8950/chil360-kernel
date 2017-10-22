@@ -939,8 +939,8 @@ void __init msm8x25_kgsl_3d0_init(void)
 		kgsl_3d0_pdata.strtstp_sleepwake = false;
 
 		/* 8x25 supports a higher GPU frequency */
-		kgsl_3d0_pdata.pwrlevel[0].gpu_freq = 320000000;
-		kgsl_3d0_pdata.pwrlevel[0].bus_freq = 200000000;
+		kgsl_3d0_pdata.pwrlevel[0].gpu_freq = 360000000;
+		kgsl_3d0_pdata.pwrlevel[0].bus_freq = 250000000;
 	}
 }
 
