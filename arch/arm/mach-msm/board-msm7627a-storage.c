@@ -444,16 +444,16 @@ static struct mmc_platform_data sdc4_plat_data = {
 #define PREALLOC_WLAN_SECTION_HEADER	24
 
 #define WLAN_SECTION_SIZE_0	(PREALLOC_WLAN_BUF_NUM * 128)
-￼#define WLAN_SECTION_SIZE_1	(PREALLOC_WLAN_BUF_NUM * 128)
-￼#define WLAN_SECTION_SIZE_2	(PREALLOC_WLAN_BUF_NUM * 512)
-￼#define WLAN_SECTION_SIZE_3	(PREALLOC_WLAN_BUF_NUM * 1024)
+#define WLAN_SECTION_SIZE_1	(PREALLOC_WLAN_BUF_NUM * 128)
+#define WLAN_SECTION_SIZE_2	(PREALLOC_WLAN_BUF_NUM * 512)
+#define WLAN_SECTION_SIZE_3	(PREALLOC_WLAN_BUF_NUM * 1024)
 
 #define DHD_SKB_HDRSIZE		336
 #define DHD_SKB_1PAGE_BUFSIZE	((PAGE_SIZE*1)-DHD_SKB_HDRSIZE)
 #define DHD_SKB_2PAGE_BUFSIZE	((PAGE_SIZE*2)-DHD_SKB_HDRSIZE)
 #define DHD_SKB_4PAGE_BUFSIZE	((PAGE_SIZE*4)-DHD_SKB_HDRSIZE)
 
-#define WLAN_SKB_BUF_NUM
+#define WLAN_SKB_BUF_NUM	17
 
 /* for wifi awake */
 #define WLAN_WAKES_MSM        		48	
@@ -501,10 +501,10 @@ static void *bcm_wifi_mem_prealloc(int section, unsigned long size)
 	if ((section < 0) || (section > PREALLOC_WLAN_SEC_NUM))
 		return NULL;
 
-￼	if (wlan_mem_array[section].size < size)
+	if (wlan_mem_array[section].size < size)
 		return NULL;
 
-￼	return wlan_mem_array[section].mem_ptr;
+	return wlan_mem_array[section].mem_ptr;
 }
 
 /*wlan power control*/
@@ -540,8 +540,9 @@ static int bcm_wifi_set_power(int enable)
 
 int __init bcm_wifi_init_gpio_mem(void)
 {
-	int i = 0;
+	int i ;
 	int rc = 0;
+	int j ;
 
 	/* config gpio WLAN_WAKES_MSM */
 	rc = gpio_tlmm_config(wlan_wakes_msm[0], GPIO_CFG_ENABLE);	
@@ -589,22 +590,22 @@ int __init bcm_wifi_init_gpio_mem(void)
 			goto err_skb_alloc;
 	}
 
-￼	for (; i < 16; i++) {
-￼		wlan_static_skb[i] = dev_alloc_skb(DHD_SKB_2PAGE_BUFSIZE);
-￼		if (!wlan_static_skb[i])
-￼			goto err_skb_alloc;
-￼	}
-￼
-￼	wlan_static_skb[i] = dev_alloc_skb(DHD_SKB_4PAGE_BUFSIZE);
-￼	if (!wlan_static_skb[i])
-￼		goto err_skb_alloc;
-￼
-￼	for (i = 0 ; i < PREALLOC_WLAN_SEC_NUM ; i++) {
-￼		wlan_mem_array[i].mem_ptr =
-￼			kmalloc(wlan_mem_array[i].size, GFP_KERNEL);
-￼
-￼		if (!wlan_mem_array[i].mem_ptr)
-￼			goto err_mem_alloc;
+	for (; i < 16; i++) {
+		wlan_static_skb[i] = dev_alloc_skb(DHD_SKB_2PAGE_BUFSIZE);
+		if (!wlan_static_skb[i])
+			goto err_skb_alloc;
+	}
+
+	wlan_static_skb[i] = dev_alloc_skb(DHD_SKB_4PAGE_BUFSIZE);
+	if (!wlan_static_skb[i])
+		goto err_skb_alloc;
+
+	for (i = 0 ; i < PREALLOC_WLAN_SEC_NUM ; i++) {
+		wlan_mem_array[i].mem_ptr =
+			kmalloc(wlan_mem_array[i].size, GFP_KERNEL);
+
+		if (!wlan_mem_array[i].mem_ptr)
+			goto err_mem_alloc;
 	}
 	wlan_static_scan_buf0 = kmalloc(65536, GFP_KERNEL);
 	if (!wlan_static_scan_buf0)
@@ -615,19 +616,19 @@ int __init bcm_wifi_init_gpio_mem(void)
 
 	return 0;
 
-￼ err_mem_alloc:
-￼	pr_err("Failed to mem_alloc for wifi\n");
-￼	for (j = 0 ; j < i ; j++)
-￼		kfree(wlan_mem_array[j].mem_ptr);
-￼
-￼	i = WLAN_SKB_BUF_NUM;
-￼
-￼ err_skb_alloc:
-￼	pr_err("Failed to skb_alloc for wifi\n");
-￼	for (j = 0 ; j < i ; j++)
-￼		dev_kfree_skb(wlan_static_skb[j]);
-￼
-￼	return -ENOMEM;
+ err_mem_alloc:
+	pr_err("Failed to mem_alloc for wifi\n");
+	for (j = 0 ; j < i ; j++)
+		kfree(wlan_mem_array[j].mem_ptr);
+
+	i = WLAN_SKB_BUF_NUM;
+
+ err_skb_alloc:
+	pr_err("Failed to skb_alloc for wifi\n");
+	for (j = 0 ; j < i ; j++)
+		dev_kfree_skb(wlan_static_skb[j]);
+
+	return -ENOMEM;
 }
 
 /* Customized Locale table : OPTIONAL feature */
