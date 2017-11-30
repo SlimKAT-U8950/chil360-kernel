@@ -259,7 +259,7 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 
  // Chil360 RAM tweak
 #ifdef CONFIG_CHIL360_RAM_STOCK
-#define MSM_PMEM_ADSP_SIZE      0x1200000 // 18mb
+#define MSM_PMEM_ADSP_SIZE      0x1300000 // 18mb
 #elif defined(CONFIG_CHIL360_RAM_MEDIUM)
 #define MSM_PMEM_ADSP_SIZE      0xD00000 // 13mb
 #elif defined(CONFIG_CHIL360_RAM_EXTRA_HIGH)
@@ -535,7 +535,7 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 					.idle_enabled = 0,
 					.suspend_enabled = 0,
 					.latency = 500,
-					.residency = 6000,
+					.residency = 500,
 	},
 
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT)] = {
@@ -554,7 +554,7 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 					.idle_enabled = 0,
 					.suspend_enabled = 0,
 					.latency = 500,
-					.residency = 6000,
+					.residency = 500,
 	},
 
 	[MSM_PM_MODE(1, MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT)] = {
@@ -1118,13 +1118,13 @@ static void __init msm7x27a_reserve(void)
 }
 
 
-/* 此段代码被全部移到static void __init msm7x27a_reserve(void)函数前面 */
+/* 姝ゆ浠ｇ爜琚叏閮ㄧЩ鍒皊tatic void __init msm7x27a_reserve(void)鍑芥暟鍓嶉潰 */
 
 static void __init msm8625_reserve(void)
 {
 	msm7x27a_reserve();
 
-/* 此段代码被全部移到的实现被移到static void __init msm7x27a_reserve(void)函数里面实现 */
+/* 姝ゆ浠ｇ爜琚叏閮ㄧЩ鍒扮殑瀹炵幇琚Щ鍒皊tatic void __init msm7x27a_reserve(void)鍑芥暟閲岄潰瀹炵幇 */
 
 	memblock_remove(MSM8625_SECONDARY_PHYS, SZ_8);
 	memblock_remove(MSM8625_WARM_BOOT_PHYS, SZ_32);
