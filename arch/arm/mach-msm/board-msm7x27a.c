@@ -254,34 +254,20 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 };
 
 #ifdef CONFIG_ARCH_MSM7X27A
-#define MSM_PMEM_MDP_SIZE       0x2300000
+#define MSM_PMEM_MDP_SIZE       0x2500000
 #define MSM7x25A_MSM_PMEM_MDP_SIZE       0x1500000
 
- // Chil360 RAM tweak
-#ifdef CONFIG_CHIL360_RAM_STOCK
-#define MSM_PMEM_ADSP_SIZE      0x1300000 // 18mb
-#elif defined(CONFIG_CHIL360_RAM_MEDIUM)
-#define MSM_PMEM_ADSP_SIZE      0xD00000 // 13mb
-#elif defined(CONFIG_CHIL360_RAM_EXTRA_HIGH)
-//#define MSM_PMEM_ADSP_SIZE	0x800000 // 8mb
-#define MSM_PMEM_ADSP_SIZE	0x400000 // 4mb
-#else
-#define MSM_PMEM_ADSP_SIZE      0xC00000 // 12mb
-#endif
-
-
-#define MSM_PMEM_ADSP_BIG_SIZE      0x1E00000
+#define MSM_PMEM_ADSP_SIZE      0x1600000
 #define MSM7x25A_MSM_PMEM_ADSP_SIZE      0xB91000
 #define CAMERA_ZSL_SIZE		(SZ_1M * 60)
+#endif
 
-#define MSM_3M_PMEM_ADSP_SIZE	(0x1048000)
 /*   enlarge the pmem space for HDR on 8950s
  */
-static unsigned int get_pmem_adsp_size(void)
+/* static unsigned int get_pmem_adsp_size(void)
 {
 	if( machine_is_msm8x25_C8950D()
 	|| machine_is_msm8x25_U8950D()
-	/*delete some line; to reduce pmem for releasing memory*/
 	||machine_is_msm8x25_U8950()){
 			return CAMERA_ZSL_SIZE;		
 		}
@@ -294,8 +280,8 @@ static unsigned int get_pmem_adsp_size(void)
 	else
 		return MSM_PMEM_ADSP_SIZE;
 
-}
-#endif
+} 
+*/
 
 #ifdef CONFIG_ION_MSM
 #define MSM_ION_HEAP_NUM        4
@@ -894,10 +880,8 @@ static void fix_sizes(void)
 		pmem_mdp_size = MSM7x25A_MSM_PMEM_MDP_SIZE;
 		pmem_adsp_size = MSM7x25A_MSM_PMEM_ADSP_SIZE;
 	} else {
-		pmem_mdp_size = get_mdp_pmem_size();
-		printk("pmem_mdp_size=%08x\n",pmem_mdp_size);
-		pmem_adsp_size = get_pmem_adsp_size();
-		printk("pmem_adsp_size=%08x\n",pmem_adsp_size);
+		pmem_mdp_size = MSM_PMEM_MDP_SIZE;
+		pmem_adsp_size = MSM_PMEM_ADSP_SIZE;
 	}
 /*delete qcom code */
 /*
@@ -998,10 +982,11 @@ static void __init size_pmem_devices(void)
 
 #ifdef CONFIG_ANDROID_PMEM
 #ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
-static void __init reserve_memory_for(struct android_pmem_platform_data *p)
-{
-	msm7x27a_reserve_table[p->memory_type].size += p->size;
-}
+static struct android_pmem_platform_data *pmem_pdata_array[] __initdata = {
+		&android_pmem_adsp_pdata,
+		&android_pmem_audio_pdata,
+		&android_pmem_pdata,
+};
 #endif
 #endif
 
