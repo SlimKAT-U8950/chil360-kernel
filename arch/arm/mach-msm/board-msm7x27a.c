@@ -254,20 +254,34 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 };
 
 #ifdef CONFIG_ARCH_MSM7X27A
-#define MSM_PMEM_MDP_SIZE       0x2500000
+#define MSM_PMEM_MDP_SIZE       0x2300000
 #define MSM7x25A_MSM_PMEM_MDP_SIZE       0x1500000
 
-#define MSM_PMEM_ADSP_SIZE      0x1600000
-#define MSM7x25A_MSM_PMEM_ADSP_SIZE      0xB91000
-#define CAMERA_ZSL_SIZE		(SZ_1M * 60)
+ // Chil360 RAM tweak
+#ifdef CONFIG_CHIL360_RAM_STOCK
+#define MSM_PMEM_ADSP_SIZE      0x1200000 // 18mb
+#elif defined(CONFIG_CHIL360_RAM_MEDIUM)
+#define MSM_PMEM_ADSP_SIZE      0xD00000 // 13mb
+#elif defined(CONFIG_CHIL360_RAM_EXTRA_HIGH)
+//#define MSM_PMEM_ADSP_SIZE	0x800000 // 8mb
+#define MSM_PMEM_ADSP_SIZE	0x400000 // 4mb
+#else
+#define MSM_PMEM_ADSP_SIZE      0xC00000 // 12mb
 #endif
 
+
+#define MSM_PMEM_ADSP_BIG_SIZE      0x1E00000
+#define MSM7x25A_MSM_PMEM_ADSP_SIZE      0xB91000
+#define CAMERA_ZSL_SIZE		(SZ_1M * 60)
+
+#define MSM_3M_PMEM_ADSP_SIZE	(0x1048000)
 /*   enlarge the pmem space for HDR on 8950s
  */
-/* static unsigned int get_pmem_adsp_size(void)
+static unsigned int get_pmem_adsp_size(void)
 {
 	if( machine_is_msm8x25_C8950D()
 	|| machine_is_msm8x25_U8950D()
+	/*delete some line; to reduce pmem for releasing memory*/
 	||machine_is_msm8x25_U8950()){
 			return CAMERA_ZSL_SIZE;		
 		}
@@ -280,8 +294,8 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 	else
 		return MSM_PMEM_ADSP_SIZE;
 
-} 
-*/
+}
+#endif
 
 #ifdef CONFIG_ION_MSM
 #define MSM_ION_HEAP_NUM        4
@@ -521,7 +535,7 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 					.idle_enabled = 0,
 					.suspend_enabled = 0,
 					.latency = 500,
-					.residency = 500,
+					.residency = 6000,
 	},
 
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT)] = {
@@ -540,7 +554,7 @@ static struct msm_pm_platform_data msm8625_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 					.idle_enabled = 0,
 					.suspend_enabled = 0,
 					.latency = 500,
-					.residency = 500,
+					.residency = 6000,
 	},
 
 	[MSM_PM_MODE(1, MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT)] = {
@@ -880,8 +894,10 @@ static void fix_sizes(void)
 		pmem_mdp_size = MSM7x25A_MSM_PMEM_MDP_SIZE;
 		pmem_adsp_size = MSM7x25A_MSM_PMEM_ADSP_SIZE;
 	} else {
-		pmem_mdp_size = MSM_PMEM_MDP_SIZE;
-		pmem_adsp_size = MSM_PMEM_ADSP_SIZE;
+		pmem_mdp_size = get_mdp_pmem_size();
+		printk("pmem_mdp_size=%08x\n",pmem_mdp_size);
+		pmem_adsp_size = get_pmem_adsp_size();
+		printk("pmem_adsp_size=%08x\n",pmem_adsp_size);
 	}
 /*delete qcom code */
 /*
@@ -982,11 +998,10 @@ static void __init size_pmem_devices(void)
 
 #ifdef CONFIG_ANDROID_PMEM
 #ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
-static struct android_pmem_platform_data *pmem_pdata_array[] __initdata = {
-		&android_pmem_adsp_pdata,
-		&android_pmem_audio_pdata,
-		&android_pmem_pdata,
-};
+static void __init reserve_memory_for(struct android_pmem_platform_data *p)
+{
+	msm7x27a_reserve_table[p->memory_type].size += p->size;
+}
 #endif
 #endif
 
@@ -1103,13 +1118,13 @@ static void __init msm7x27a_reserve(void)
 }
 
 
-/* 此段代码被全部移到static void __init msm7x27a_reserve(void)函数前面 */
+/* �˶δ��뱻ȫ���Ƶ�static void __init msm7x27a_reserve(void)����ǰ�� */
 
 static void __init msm8625_reserve(void)
 {
 	msm7x27a_reserve();
 
-/* 此段代码被全部移到的实现被移到static void __init msm7x27a_reserve(void)函数里面实现 */
+/* �˶δ��뱻ȫ���Ƶ���ʵ�ֱ��Ƶ�static void __init msm7x27a_reserve(void)��������ʵ�� */
 
 	memblock_remove(MSM8625_SECONDARY_PHYS, SZ_8);
 	memblock_remove(MSM8625_WARM_BOOT_PHYS, SZ_32);
@@ -1836,3 +1851,4 @@ MACHINE_START(MSM8X25_Y300_J1, "MSM8x25 Y300_J1 BOARD")
 	.init_early     = msm7x2x_init_early,
 	.handle_irq	= gic_handle_irq,
 MACHINE_END
+
