@@ -89,11 +89,9 @@ static struct pll_config pll4_cfg_tbl[] = {
 	[1] = {  52, 1, 2 }, /* 1008 MHz */
 	[2] = {  63, 0, 1 }, /* 1209.6 MHz */
 	[3] = {  73, 0, 1 }, /* 1401.6 MHz */
-	[4] = {  61, 0, 1 }, /* 1170 MHz */
+	[4] = {  60, 0, 1 }, /* 1152 MHz */
 	[5] = {  57, 1, 2 }, /* 1104 MHz */
-#ifdef CONFIG_CHIL360_OC
-        [6] = { 54, 1, 2 }, /* 1046.7 MHz */
-#endif
+        [6] = { 62, 1, 2 }, /* 1046.7 MHz */
 };
 
 struct clock_state {
@@ -395,7 +393,8 @@ static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_1152[] = {
 	{ 0, 600000, ACPU_PLL_2, 2, 1, 75000, 3, 4, 160000 },
 	{ 1, 700800, ACPU_PLL_4, 6, 0, 87500, 3, 4, 160000, &pll4_cfg_tbl[0]},
 	{ 1, 1008000, ACPU_PLL_4, 6, 0, 126000, 3, 5, 200000, &pll4_cfg_tbl[1]},
-	{ 1, 1104000, ACPU_PLL_4, 6, 0, 151200, 3, 6, 200000, &pll4_cfg_tbl[5]},
+//	{ 1, 1104000, ACPU_PLL_4, 6, 0, 151200, 3, 6, 200000, &pll4_cfg_tbl[5]},
+	{ 1, 1200000, ACPU_PLL_4, 6, 0, 151200, 3, 5, 200000, &pll4_cfg_tbl[6]},
 	{ 0 }
 };
 
@@ -980,37 +979,38 @@ static void __devinit acpuclk_hw_init(void)
 
 #ifdef CONFIG_CPU_FREQ_VDD_LEVELS
 
-ssize_t acpuclk_get_vdd_levels_str(char *buf)
-{
-	int i, len = 0;
-	if (buf) {
-		mutex_lock(&drv_state.lock);
-		for (i = 0; acpu_freq_tbl[i].a11clk_khz; i++) {
-			if (acpu_freq_tbl[i].use_for_scaling)
-			len += sprintf(buf + len, "%8u: %8d\n", acpu_freq_tbl[i].a11clk_khz, acpu_freq_tbl[i].vdd);
-		}
-		mutex_unlock(&drv_state.lock);
-	}
-	return len;
+ssize_t acpuclk_get_vdd_levels_str(char *buf) {
+
+        int i, len = 0;
+
+        if (buf) {
+                mutex_lock(&drv_state.lock);
+//y300-100, for other devices you need change freq table...
+                for (i = 0; pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[i].a11clk_khz; i++) {
+                        if (pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[i].use_for_scaling)
+                        len += sprintf(buf + len, "%8u: %8d\n", pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[i].a11clk_khz, pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[i].vdd);
+                }
+
+                mutex_unlock(&drv_state.lock);
+        }
+        return len;
 }
 
 /* uv */
-void acpuclk_set_vdd(unsigned int khz, int vdd_uv)
-{
-	int i;
-	unsigned int mhz;
-	mhz = (khz < 5000) ? khz : (khz / 1000);
-	pr_info("%s: MHz: %d, vdd: %d uv\n", __func__, mhz, vdd_uv);
-	mutex_lock(&drv_state.lock);
-	for (i = 0; acpu_freq_tbl[i].a11clk_khz; i++) {
-		if (acpu_freq_tbl[i].a11clk_khz / 1000 == mhz) {
-			acpu_freq_tbl[i].vdd = vdd_uv;
-		}
-	}
-	mutex_unlock(&drv_state.lock);
-}
+void acpuclk_set_vdd(unsigned int khz, int vdd_uv) {
+        int i;
+        printk(KERN_ERR"acpuclk_set_vdd khz: %d, vdd_uv: %d\n", khz, vdd_uv);
+        mutex_lock(&drv_state.lock);
+//y300-100, for other devices you need change freq table...
+        for (i = 0; pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[i].a11clk_khz; i++) {
+                if ( pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[i].a11clk_khz == khz)
+                        pll0_960_pll1_196_pll2_1200_pll4_1008_2p0[i].vdd = vdd_uv;
+        }
 
-#endif /* CONFIG_CPU_FREQ_VDD_LEVELS */
+        mutex_unlock(&drv_state.lock);
+}
+#endif        /* CONFIG_CPU_FREQ_VDD_LEVELS */
+
 
 static unsigned long acpuclk_7627_get_rate(int cpu)
 {
