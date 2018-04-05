@@ -91,7 +91,7 @@ static struct pll_config pll4_cfg_tbl[] = {
 	[3] = {  73, 0, 1 }, /* 1401.6 MHz */
 	[4] = {  60, 0, 1 }, /* 1152 MHz */
 	[5] = {  57, 1, 2 }, /* 1104 MHz */
-        [6] = { 62, 1, 2 }, /* 1046.7 MHz */
+        [6] = { 63, 1, 2 }, /* 1046.7 MHz */
 };
 
 struct clock_state {
