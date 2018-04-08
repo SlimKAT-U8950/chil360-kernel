@@ -2,6 +2,7 @@
 obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o
 # CPUfreq stats
 obj-$(CONFIG_CPU_FREQ_STAT)             += cpufreq_stats.o
+obj-$(CONFIG_MSM_HOTPLUG) += msm_hotplug.o
 
 # CPUfreq governors
 obj-$(CONFIG_CPU_FREQ_GOV_USERSPACE)	+= cpufreq_userspace.o
@@ -17,12 +18,12 @@ obj-$(CONFIG_CPU_FREQ_GOV_HYPER)		+= cpufreq_hyper.o
 obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVE)	+= cpufreq_conservative.o
 obj-$(CONFIG_CPU_FREQ_GOV_ADAPTIVE)		+= cpufreq_adaptive.o
 obj-$(CONFIG_CPU_FREQ_GOV_ASSWAX)		+= cpufreq_asswax.o
-obj-$(CONFIG_CPU_FREQ_GOV_BADASS)       += cpufreq_badass.o
-obj-$(CONFIG_CPU_FREQ_GOV_DANCEDANCE)	+= cpufreq_dancedance.o
-obj-$(CONFIG_CPU_FREQ_GOV_INTELLIDEMAND)	+= cpufreq_intellidemand.o
-obj-$(CONFIG_CPU_FREQ_GOV_SMARTASSH3)  	+= cpufreq_smartassH3.o
-obj-$(CONFIG_CPU_FREQ_GOV_SMARTMAX)		+= cpufreq_smartmax.o
-obj-$(CONFIG_CPU_FREQ_GOV_WHEATLEY)		+= cpufreq_wheatley.o
+#obj-$(CONFIG_CPU_FREQ_GOV_BADASS)       += cpufreq_badass.o
+#obj-$(CONFIG_CPU_FREQ_GOV_DANCEDANCE)	+= cpufreq_dancedance.o
+#obj-$(CONFIG_CPU_FREQ_GOV_INTELLIDEMAND)	+= cpufreq_intellidemand.o
+#obj-$(CONFIG_CPU_FREQ_GOV_SMARTASSH3)  	+= cpufreq_smartassH3.o
+#obj-$(CONFIG_CPU_FREQ_GOV_SMARTMAX)		+= cpufreq_smartmax.o
+#obj-$(CONFIG_CPU_FREQ_GOV_WHEATLEY)		+= cpufreq_wheatley.o
 
 # CPUfreq cross-arch helpers
 obj-$(CONFIG_CPU_FREQ_TABLE)		+= freq_table.o
