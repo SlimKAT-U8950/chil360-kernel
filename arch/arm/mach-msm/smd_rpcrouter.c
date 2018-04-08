@@ -542,20 +542,13 @@ static void rpcrouter_register_board_dev(struct rr_server *server)
 			D("%s: registering device %x\n",
 			  __func__, board_info->dev->prog);
 			list_del(&board_info->list);
-			/* fix the BUG "BUG: scheduling while atomic:" */
-#ifdef CONFIG_HUAWEI_KERNEL
 			spin_unlock_irqrestore(&rpc_board_dev_list_lock, flags);
-#endif
 			rc = platform_device_register(&board_info->dev->pdev);
-			/* fix the BUG "BUG: scheduling while atomic:" */
-#ifdef CONFIG_HUAWEI_KERNEL
-			spin_lock_irqsave(&rpc_board_dev_list_lock, flags);
-#endif
 			if (rc)
 				pr_err("%s: board dev register failed %d\n",
 				       __func__, rc);
 			kfree(board_info);
-			break;
+			return;
 		}
 	}
 	spin_unlock_irqrestore(&rpc_board_dev_list_lock, flags);
@@ -650,7 +643,7 @@ struct msm_rpc_endpoint *msm_rpcrouter_create_local_endpoint(dev_t dev)
 int msm_rpcrouter_destroy_local_endpoint(struct msm_rpc_endpoint *ept)
 {
 	int rc;
-	union rr_control_msg msg;
+	union rr_control_msg msg = { 0 };
 	struct msm_rpc_reply *reply, *reply_tmp;
 	unsigned long flags;
 	struct rpcrouter_xprt_info *xprt_info;
@@ -785,7 +778,7 @@ static void handle_server_restart(struct rr_server *server,
 static int process_control_msg(struct rpcrouter_xprt_info *xprt_info,
 			       union rr_control_msg *msg, int len)
 {
-	union rr_control_msg ctl;
+	union rr_control_msg ctl = { 0 };
 	struct rr_server *server;
 	struct rr_remote_endpoint *r_ept;
 	int rc = 0;
@@ -1233,7 +1226,7 @@ packet_complete:
 done:
 
 	if (hdr.confirm_rx) {
-		union rr_control_msg msg;
+		union rr_control_msg msg = { 0 };
 
 		msg.cmd = RPCROUTER_CTRL_CMD_RESUME_TX;
 		msg.cli.pid = hdr.dst_pid;
@@ -2092,7 +2085,7 @@ int msm_rpc_register_server(struct msm_rpc_endpoint *ept,
 			    uint32_t prog, uint32_t vers)
 {
 	int rc;
-	union rr_control_msg msg;
+	union rr_control_msg msg = { 0 };
 	struct rr_server *server;
 	struct rpcrouter_xprt_info *xprt_info;
 
@@ -2173,7 +2166,7 @@ int msm_rpc_get_curr_pkt_size(struct msm_rpc_endpoint *ept)
 int msm_rpcrouter_close(void)
 {
 	struct rpcrouter_xprt_info *xprt_info;
-	union rr_control_msg ctl;
+	union rr_control_msg ctl = { 0 };
 
 	ctl.cmd = RPCROUTER_CTRL_CMD_BYE;
 	mutex_lock(&xprt_info_list_lock);

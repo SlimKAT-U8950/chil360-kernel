@@ -779,6 +779,9 @@ static void __init do_initcalls(void)
  */
 static void __init do_basic_setup(void)
 {
+	pmem_log_init();
+	pmem_log_start(3);
+
 	cpuset_init_smp();
 	usermodehelper_init();
 	shmem_init();

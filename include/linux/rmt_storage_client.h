@@ -103,3 +103,4 @@ enum {
     _IOW(RMT_STORAGE_IOCTL_MAGIC, 4 , struct rmt_storage_ack_info)
 #endif
 
+
