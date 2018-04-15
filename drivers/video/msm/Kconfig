@@ -68,6 +68,16 @@ config FB_MSM_MDP303
 	  required for msm7x2xA platform.
 	  Say Y here if this is msm7x2xA variant platform.
 
+config FB_MSM_MDP_LUT_ENABLE
+	depends on FB_MSM_MDP30
+	depends on FB_MSM_MDP303
+	bool "MDP HW ver3.03"
+	default n
+	---help---
+	  Support for MSM MDP LUT enable. This is Look Up Table to support the features
+	  required for msm7x2xA platform.
+	  Say Y here if this is msm7x2xA variant platform.
+
 config FB_MSM_MDP31
 	select FB_MSM_LCDC_HW
 	select FB_MSM_MDP_HW
@@ -184,6 +194,13 @@ config FB_MSM_MIPI_DSI_RENESAS
 	select FB_MSM_MIPI_DSI
 	default n
 
+#LGE_CHANGE_S, [sohyun.nam@lge.com] , 2012-10-16
+
+config FB_MSM_MIPI_DSI_ILI9486
+        bool
+        select FB_MSM_MIPI_DSI
+        default n
+#LGE_CHANGE_E, [sohyun.nam@lge.com] , 2012-10-16
 config FB_MSM_MIPI_DSI_TRULY
 	bool
 	select FB_MSM_MIPI_DSI
@@ -197,6 +214,20 @@ config FB_MSM_MIPI_DSI_NOVATEK
         bool
         select FB_MSM_MIPI_DSI
         default n
+
+#LGE_CHANGE_S : seven.kim@lge.com kernel3.0 porting
+config FB_MSM_MIPI_DSI_LG4573B
+	bool
+	select FB_MSM_MIPI_DSI
+	default n
+#LGE_CHANGE_E : seven.kim@lge.com kernel3.0 porting
+
+#LGE_CHANGE_S : sohyun.nam@lge.com tovis porting
+config FB_MSM_MIPI_DSI_HX8379A
+	bool
+	select FB_MSM_MIPI_DSI
+	default n
+#LGE_CHANGE_E : sohyun.nam@lge.com tovis porting
 
 config FB_MSM_MIPI_DSI_NT35510
 	bool
@@ -214,6 +245,7 @@ config FB_MSM_MIPI_DSI_NT35516
 config FB_MSM_MIPI_DSI_TC358764_DSI2LVDS
 	bool
 	select FB_MSM_MIPI_DSI
+	default n
 	---help---
 	  Support for Toshiba MIPI DSI-to-LVDS bridge.
 	  The chip supports 1366x768 24-bit
@@ -221,123 +253,6 @@ config FB_MSM_MIPI_DSI_TC358764_DSI2LVDS
 	  and up to WUXGA 1920x1200 18-bit
 	  using a dual LVDS link.
 
-config FB_HUAWEI_MIPI_DSI_RSP61408
-	bool "support MIPI RSP61408"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_NT35516
-	bool "support MIPI NT35516"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_HX8369A_FWVGA
-	bool "support MIPI HX8369A FWVGA"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_NT35510_FWVGA
-	bool "support MIPI NT35510 FWVGA"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_NT35560
-	bool "support MIPI NT35560"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_NT35510
-	bool "support MIPI NT35510"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_OTM8009A
-	bool "support MIPI OTM8009A"
-	select FB_MSM_MIPI_DSI
-	default n
-	
-#/*Add otm8018b for video mode*/
-config FB_HUAWEI_MIPI_DSI_OTM8018B
-	bool "support MIPI OTM8018B"
-	select FB_MSM_MIPI_DSI
-	default n
-
-#/*Add nt35512 for video mode*/
-config FB_HUAWEI_MIPI_DSI_NT35512
-	bool "support MIPI NT35512"
-	select FB_MSM_MIPI_DSI
-	default n
-
-config FB_HUAWEI_MIPI_DSI_NT35310
-	bool "support MIPI NT35310"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_OTM8009A_FWVGA
-	bool "support MIPI OTM8009A FWVGA"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_HX8357C
-	bool "support MIPI HX8357C"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_HX8369A
-	bool "support MIPI HX8369A"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_MIPI_DSI_HX8369B
-	bool "support MIPI HX8369B"
-	select FB_MSM_MIPI_DSI
-	default n
-config FB_HUAWEI_LCDC_HX8357B
-	bool "support LCDC HX8357B"
-	select FB_MSM_LCDC_PANEL
-	default n          
-config FB_HUAWEI_LCDC_HX8357C
-	bool "support LCDC HX8357C"
-	select FB_MSM_LCDC_PANEL
-	default n
-config FB_HUAWEI_LCDC_R61529
-	bool "support LCDC R61529"
-	select FB_MSM_LCDC_PANEL
-	default n
-config FB_HUAWEI_LCDC_NT35410
-	bool "support LCDC NT35410"
-	select FB_MSM_LCDC_PANEL
-	default n
-config FB_HUAWEI_LCDC_HX8347D
-	bool "support LCDC HX8347D"
-	select FB_MSM_LCDC_PANEL
-	default n
-config FB_HUAWEI_LCDC_HX8347G
-	bool "support LCDC HX8347G"
-	select FB_MSM_LCDC_PANEL
-	default n
-
-config FB_HUAWEI_MDDI_NT35582
-	bool "support MDDI NT35582"
-	select FB_MSM_MDDI
-	default n          
-config FB_HUAWEI_MDDI_NT35510
-	bool "support MDDI NT35510"
-	select FB_MSM_MDDI
-	default n
-
-config FB_HUAWEI_MDDI_NT35510_TYPE2
-	bool "support MDDI NT35510 type2"
-	select FB_MSM_MDDI
-	default n
-
-config FB_HUAWEI_MDDI_NT35560
-	bool "support MDDI NT35560"
-	select FB_MSM_MDDI
-	default n
-config FB_HUAWEI_MDDI_RSP61408
-	bool "support MDDI RSP61408"
-	select FB_MSM_MDDI
-	default n
-config FB_HUAWEI_MDDI_HX8369A
-	bool "support MDDI HX8369A"
-	select FB_MSM_MDDI
-	default n
-config FB_HUAWEI_MDDI_HX8357C
-	bool "support MDDI HX8357C"
-	select FB_MSM_MDDI
-	default n
-	
 config FB_MSM_LCDC_ST15_WXGA
     bool
     select FB_MSM_LCDC_PANEL
@@ -463,6 +378,18 @@ config FB_MSM_MIPI_ORISE_CMD_720P_PT
 	bool
 	select FB_MSM_MIPI_DSI_ORISE
 	default n
+#LGE_CHANGE_S, [sohyun.nam@lge.com] , 2012-10-16
+
+config FB_MSM_MIPI_ILI9486_VIDEO_HVGA_PT
+        bool
+        select FB_MSM_MIPI_DSI_ILI9486
+        default n
+
+config FB_MSM_MIPI_ILI9486_CMD_HVGA_PT
+        bool
+        select FB_MSM_MIPI_DSI_ILI9486
+        default n
+#LGE_CHANGE_E, [sohyun.nam@lge.com] , 2012-10-16
 
 config FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT
 	bool
@@ -521,6 +448,20 @@ config FB_MSM_MIPI_SIMULATOR_VIDEO
 	bool
 	select FB_MSM_MIPI_DSI_SIMULATOR
 	default n
+
+#LGE_CHANGE_S : seven.kim@lge.com kernel3.0 porting
+config FB_MSM_MIPI_LG4573B_VIDEO_WVGA_PT
+	bool
+	select FB_MSM_MIPI_DSI_LG4573B
+	default n
+#LGE_CHANGE_E : seven.kim@lge.com kernel3.0 porting
+
+#LGE_CHANGE_S : sohyun.nam@lge.com tovis porting
+config FB_MSM_MIPI_HX8379A_VIDEO_WVGA_PT
+	bool
+	select FB_MSM_MIPI_DSI_HX8379A
+	default n
+#LGE_CHANGE_E : sohyun.nam@lge.com tovis porting
 
 config FB_MSM_NO_MDP_PIPE_CTRL
 	depends on FB_MSM_OVERLAY
@@ -661,6 +602,10 @@ config FB_MSM_MIPI_PANEL_DETECT
 	select FB_MSM_MIPI_TOSHIBA_VIDEO_WSVGA_PT
 	select FB_MSM_MIPI_TOSHIBA_VIDEO_WUXGA
 	select FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT
+#LGE_CHANGE_S, [sohyun.nam@lge.com] , 2012-10-16
+        select FB_MSM_MIPI_ILI9486_VIDEO_HVGA_PT
+        select FB_MSM_MIPI_ILI9486_CMD_HVGA_PT
+#LGE_CHANGE_E, [sohyun.nam@lge.com] , 2012-10-16
 	select FB_MSM_MIPI_RENESAS_CMD_FWVGA_PT
 	select FB_MSM_MIPI_TRULY_VIDEO_WVGA_PT
 	select FB_MSM_MIPI_NOVATEK_VIDEO_QHD_PT
@@ -795,6 +740,15 @@ config FB_MSM_MIPI_ORISE_CMD_720P_PT_PANEL
 	bool "MIPI ORISE CMD 720P PT Panel"
 	select FB_MSM_MIPI_ORISE_CMD_720P_PT
 
+#LGE_CHANGE_S, [sohyun.nam@lge.com] , 2012-10-16
+config FB_MSM_MIPI_ILI9486_VIDEO_HVGA_PT_PANEL
+        bool "MIPI ILI9486 Video HVGA PT Panel"
+        select FB_MSM_MIPI_ILI9486_VIDEO_HVGA_PT
+
+config FB_MSM_MIPI_ILI9486_CMD_HVGA_PT_PANEL
+        bool "MIPI ILI9486 Video CMD PT Panel"
+        select FB_MSM_MIPI_ILI9486_CMD_HVGA_PT
+#LGE_CHANGE_E, [sohyun.nam@lge.com] , 2012-10-16
 config FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT_PANEL
 	bool "MIPI Renesas Video FWVGA PT Panel"
 	select FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT
@@ -835,11 +789,23 @@ config FB_MSM_MIPI_SIMULATOR_VIDEO_PANEL
 	bool "MIPI Simulator Video Panel"
 	select FB_MSM_MIPI_SIMULATOR_VIDEO
 
+#LGE_CHANGE_S : seven.kim@lge.com kernel3.0 porting
+config FB_MSM_MIPI_LG4573B_VIDEO_WVGA_PT_PANEL
+	bool "MIPI LG4573B Command WVGA PT Panel"
+	select FB_MSM_MIPI_LG4573B_VIDEO_WVGA_PT
+#LGE_CHANGE_E : seven.kim@lge.com kernel3.0 porting	
+
 config FB_MSM_EBI2_TMD_QVGA_EPSON_QCIF
 	bool "EBI2 TMD QVGA Epson QCIF Dual Panel"
 	select FB_MSM_EBI2
 	---help---
 	  Support for EBI2 TMD QVGA (240x320) and Epson QCIF (176x220) panel
+
+config FB_MSM_EBI2_TOVIS_QVGA
+	bool "EBI2 Tovis QVGA Panel"
+	select FB_MSM_EBI2
+	---help---
+	  Support for EBI2 TOVIS QVGA (240x320) Panel
 
 config FB_MSM_HDMI_AS_PRIMARY
 	depends on FB_MSM_HDMI_COMMON
@@ -852,6 +818,12 @@ config FB_MSM_PANEL_NONE
 	---help---
 	  This will disable LCD panel
 endchoice
+
+#LGE_CHANGE_S : sohyun.nam@lge.com tovis porting
+config FB_MSM_MIPI_HX8379A_VIDEO_WVGA_PT_PANEL
+	bool "MIPI HX8379A Command WVGA PT Panel"
+	select FB_MSM_MIPI_HX8379A_VIDEO_WVGA_PT
+#LGE_CHANGE_E : sohyun.nam@lge.com tovis porting
 
 choice
 	prompt "Secondary LCD Panel"
@@ -1076,25 +1048,4 @@ config FB_MSM_EBI2_PANEL_DETECT
 if FB_MSM_MDSS
 	source "drivers/video/msm/mdss/Kconfig"
 endif
-#/* add the code for dynamic gamma function */
-config FB_DYNAMIC_GAMMA
-	bool "Support for DYNAMIC_GAMMA fuction of glory"
-	depends on FB_MSM
-#/* change default state to 'n', move this config to hw7x30_defconfig */
-	default n
-
-#/* Add code for automatic CABC function */
-config FB_AUTO_CABC
-	bool "Support for AUTO_CABC fuction"
-	depends on FB_MSM
-	default n
-
-config HUAWEI_OLD_BACKLIGHT
-	bool "Support older Huawei backlights"
-	default n
-
-config FB_MSM_ALIGN_BUFFER
-	bool "Enable a buffer alignment hack (for recovery)."
-	default n
-
 endif

@@ -16,6 +16,7 @@
 #include <linux/module.h>
 #include <kgsl_device.h>
 
+
 #include "kgsl_trace.h"
 
 static void _add_event_to_list(struct list_head *head, struct kgsl_event *event)
@@ -112,13 +113,6 @@ int kgsl_add_event(struct kgsl_device *device, u32 id, u32 ts,
 	} else
 		_add_event_to_list(&device->events, event);
 
-	/*
-	 * Increase the active count on the device to avoid going into power
-	 * saving modes while events are pending
-	 */
-
-	device->active_cnt++;
-
 	queue_work(device->work_queue, &device->ts_expired_ws);
 	return 0;
 }
@@ -167,8 +161,6 @@ void kgsl_cancel_events_ctxt(struct kgsl_device *device,
 
 		kgsl_context_put(context);
 		kfree(event);
-
-		kgsl_active_count_put(device);
 	}
 	kgsl_context_put(context);
 }
@@ -211,8 +203,6 @@ void kgsl_cancel_events(struct kgsl_device *device,
 		if (event->context)
 			kgsl_context_put(event->context);
 		kfree(event);
-
-		kgsl_active_count_put(device);
 	}
 }
 EXPORT_SYMBOL(kgsl_cancel_events);
@@ -246,8 +236,6 @@ static void _process_event_list(struct kgsl_device *device,
 		if (event->context)
 			kgsl_context_put(event->context);
 		kfree(event);
-
-		kgsl_active_count_put(device);
 	}
 }
 

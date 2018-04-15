@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2008-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -168,7 +168,7 @@ struct msm_panel_info {
 	__u32 frame_count;
 	__u32 is_3d_panel;
 	__u32 frame_rate;
-
+	__u32 frame_interval;
 
 	struct mddi_panel_info mddi;
 	struct lcd_panel_info lcd;
@@ -193,18 +193,13 @@ struct msm_fb_panel_data {
 	/* function entry chain */
 	int (*on) (struct platform_device *pdev);
 	int (*off) (struct platform_device *pdev);
+	int (*late_init) (struct platform_device *pdev);
+	int (*early_off) (struct platform_device *pdev);
 	int (*power_ctrl) (boolean enable);
-#ifdef CONFIG_FB_DYNAMIC_GAMMA
-	int (*set_dynamic_gamma) (enum danymic_gamma_mode gamma_mode,struct msm_fb_data_type *mfd);
-#endif
-#ifdef CONFIG_FB_AUTO_CABC
-	int (*config_cabc) (struct msmfb_cabc_config cabc_cfg , struct msm_fb_data_type *mfd);
-#endif
-#ifdef CONFIG_HUAWEI_KERNEL
-	void (*set_cabc_brightness) (struct msm_fb_data_type *,uint32 level);
-#endif
 	struct platform_device *next;
 	int (*clk_func) (int enable);
+	int (*fps_level_change) (struct platform_device *pdev,
+					u32 fps_level);
 };
 
 /*===========================================================================
@@ -214,6 +209,10 @@ struct platform_device *msm_fb_device_alloc(struct msm_fb_panel_data *pdata,
 						u32 type, u32 id);
 int panel_next_on(struct platform_device *pdev);
 int panel_next_off(struct platform_device *pdev);
+int panel_next_fps_level_change(struct platform_device *pdev,
+					u32 fps_level);
+int panel_next_late_init(struct platform_device *pdev);
+int panel_next_early_off(struct platform_device *pdev);
 
 int lcdc_device_register(struct msm_panel_info *pinfo);
 

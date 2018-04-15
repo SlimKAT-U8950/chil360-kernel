@@ -16,6 +16,7 @@
 #include <linux/wait.h>
 #include <linux/mutex.h>
 #include <linux/io.h>
+#include <linux/android_pmem.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #include <linux/uaccess.h>
@@ -109,6 +110,7 @@ struct acdb_data {
 	audpp_cmd_cfg_object_params_eqalizer eq;
 	struct audrec_session_info session_info;
 	/*pmem info*/
+	int pmem_fd;
 	unsigned long paddr;
 	unsigned long kvaddr;
 	unsigned long pmem_len;
@@ -1134,6 +1136,7 @@ static long audio_acdb_ioctl(struct file *file, unsigned int cmd,
 {
 	int rc = 0;
 	unsigned long flags = 0;
+	struct msm_audio_pmem_info info;
 
 	MM_DBG("%s\n", __func__);
 
@@ -1152,6 +1155,23 @@ static long audio_acdb_ioctl(struct file *file, unsigned int cmd,
 		if (rc < 0)
 			MM_ERR("AUDPP returned err =%d\n", rc);
 		spin_unlock_irqrestore(&acdb_data.dsp_lock, flags);
+		break;
+	case AUDIO_REGISTER_PMEM:
+		MM_DBG("AUDIO_REGISTER_PMEM\n");
+		if (copy_from_user(&info, (void *) arg, sizeof(info))) {
+			MM_ERR("Cannot copy from user\n");
+			return -EFAULT;
+		}
+		rc = get_pmem_file(info.fd, &acdb_data.paddr,
+					&acdb_data.kvaddr,
+					&acdb_data.pmem_len,
+					&acdb_data.file);
+		if (rc == 0)
+			acdb_data.pmem_fd = info.fd;
+		break;
+	case AUDIO_DEREGISTER_PMEM:
+		if (acdb_data.pmem_fd)
+			put_pmem_file(acdb_data.file);
 		break;
 	case AUDIO_SET_ACDB_BLK:
 		MM_DBG("IOCTL AUDIO_SET_ACDB_BLK\n");
@@ -1941,7 +1961,7 @@ static u8 check_tx_acdb_values_cached(void)
 static void handle_tx_device_ready_callback(void)
 {
 	u8 acdb_value_apply = 0;
-	int result = 0;
+	u8 result = 0;
 
 	/*check wheather AUDREC enabled before device call backs*/
 	if ((acdb_data.acdb_state & AUDREC_READY) &&

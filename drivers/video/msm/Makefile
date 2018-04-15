@@ -63,26 +63,9 @@ obj-$(CONFIG_FB_MSM_LCDC) += lcdc.o
 # LVDS
 obj-$(CONFIG_FB_MSM_LVDS) += lvds.o
 
-obj-$(CONFIG_FB_HUAWEI_LCDC_HX8357B) += lcdc_hx8357b_hvga.o
-obj-$(CONFIG_FB_HUAWEI_LCDC_HX8357C) += lcdc_hx8357c_hvga.o	
-obj-$(CONFIG_FB_HUAWEI_LCDC_R61529) += lcdc_truly_r61529_hvga.o
-obj-$(CONFIG_FB_HUAWEI_LCDC_NT35410) += lcdc_nt35410_hvga.o
-obj-$(CONFIG_FB_HUAWEI_LCDC_HX8347D) += lcdc_hx8347d_qvga.o
-obj-$(CONFIG_FB_HUAWEI_LCDC_HX8347G) += lcdc_hx8347g_qvga.o
 # MDDI
 msm_mddi-objs := mddi.o mddihost.o mddihosti.o
 obj-$(CONFIG_FB_MSM_MDDI) += msm_mddi.o
-
-obj-$(CONFIG_FB_HUAWEI_MDDI_NT35582) += mddi_nt35582.o
-obj-$(CONFIG_FB_HUAWEI_MDDI_NT35510) += mddi_nt35510.o
-obj-$(CONFIG_FB_HUAWEI_MDDI_NT35510_TYPE2) += mddi_nt35510_type2.o
-obj-$(CONFIG_FB_HUAWEI_MDDI_NT35560) += mddi_nt35560.o
-obj-$(CONFIG_FB_HUAWEI_MDDI_RSP61408) += mddi_rsp61408.o
-obj-$(CONFIG_FB_HUAWEI_MDDI_HX8369A) += mddi_hx8369a.o
-obj-$(CONFIG_FB_HUAWEI_MDDI_HX8357C) += mddi_hx8357c.o
-obj-y += hw_backlight.o
-obj-y += hw_lcd_common.o
-obj-y += lcd_hw_debug.o
 
 # External MDDI
 msm_mddi_ext-objs := mddihost_e.o mddi_ext.o
@@ -93,24 +76,6 @@ msm_mipi-objs := mipi_dsi.o mipi_dsi_host.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI) += msm_mipi.o
 
 # MIPI manufacture
-
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_NT35560) += mipi_nt35560_cmd_fwvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_RSP61408) += mipi_rsp61408_cmd_wvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_HX8357C) += mipi_hx8357c_cmd_hvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_HX8369A) += mipi_hx8369a_cmd_wvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_HX8369B) += mipi_hx8369b_video_wvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_NT35510) += mipi_nt35510_cmd_wvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_NT35516) += mipi_nt35516_cmd_qhd.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_HX8369A_FWVGA) += mipi_hx8369a_cmd_fwvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_OTM8009A) += mipi_otm8009a_cmd_wvga.o
-#/*modify file name*/
-#/*Add otm8018b for video mode*/
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_OTM8018B) += mipi_otm8018b_video_wvga.o
-#/*Add nt35512 for video mode*/
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_NT35512) += mipi_nt35512_video_wvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_NT35510_FWVGA) += mipi_nt35510_cmd_fwvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_NT35310) += mipi_nt35310_cmd_hvga.o
-obj-$(CONFIG_FB_HUAWEI_MIPI_DSI_OTM8009A_FWVGA) += mipi_otm8009a_cmd_fwvga.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_TOSHIBA) += mipi_toshiba.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_NOVATEK) += mipi_novatek.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_ORISE) += mipi_orise.o
@@ -119,6 +84,15 @@ obj-$(CONFIG_FB_MSM_MIPI_DSI_TRULY) += mipi_truly.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_NT35510) += mipi_NT35510.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_NT35516) += mipi_truly_tft540960_1_e.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_SIMULATOR) += mipi_simulator.o
+#LGE_CHANGE_S : seven.kim@lge.com kernel3.0 porting
+obj-$(CONFIG_FB_MSM_MIPI_DSI_LG4573B) += mipi_lg4573b.o
+#LGE_CHANGE_E : seven.kim@lge.com kernel3.0 porting
+#LGE_CHANGE_S : sohyun.nam@lge.com ,2012-10-17
+obj-$(CONFIG_FB_MSM_MIPI_DSI_ILI9486) += mipi_ili9486.o
+#LGE_CHANGE_E : sohyun.nam@lge.com ,2012-10-17
+#LGE_CHANGE_S : sohyun.nam@lge.com ,2012-12-20
+obj-$(CONFIG_FB_MSM_MIPI_DSI_HX8379A) += mipi_hx8379a.o
+#LGE_CHANGE_E : sohyun.nam@lge.com ,2012-12-20
 
 # MIPI Bridge
 obj-$(CONFIG_FB_MSM_MIPI_DSI_TC358764_DSI2LVDS) += mipi_tc358764_dsi2lvds.o
@@ -133,6 +107,8 @@ endif
 obj-y += msm_fb_panel.o
 obj-$(CONFIG_FB_MSM_EBI2_TMD_QVGA_EPSON_QCIF) += ebi2_tmd20.o
 obj-$(CONFIG_FB_MSM_EBI2_TMD_QVGA_EPSON_QCIF) += ebi2_l2f.o
+obj-$(CONFIG_FB_MSM_EBI2_TOVIS_QVGA) += ebi2_tovis.o
+
 ifeq ($(CONFIG_FB_MSM_MDDI_AUTO_DETECT),y)
 obj-y += mddi_prism.o
 obj-y += mddi_toshiba.o
@@ -179,9 +155,19 @@ obj-$(CONFIG_FB_MSM_MIPI_NT35510_CMD_WVGA_PT) += mipi_NT35510_cmd_wvga_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_NT35510_VIDEO_WVGA_PT) += mipi_NT35510_video_wvga_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_NT35516_CMD_QHD_PT) += mipi_truly_tft540960_1_e_cmd_qhd_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_NT35516_VIDEO_QHD_PT) += mipi_truly_tft540960_1_e_video_qhd_pt.o
+#LGE_CHANGE_S : sohyun.nam@lge.com ,2012-10-17
+obj-$(CONFIG_FB_MSM_MIPI_ILI9486_VIDEO_HVGA_PT) += mipi_ili9486_video_hvga_pt.o
+obj-$(CONFIG_FB_MSM_MIPI_ILI9486_CMD_HVGA_PT) += mipi_ili9486_cmd_hvga_pt.o
+#LGE_CHANGE_E : sohyun.nam@lge.com ,2012-10-17
 obj-$(CONFIG_FB_MSM_MIPI_SIMULATOR_VIDEO) += mipi_simulator_video.o
 obj-$(CONFIG_FB_MSM_MIPI_CHIMEI_WXGA) += mipi_chimei_wxga_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_CHIMEI_WUXGA) += mipi_chimei_wuxga.o
+#LGE_CHANGE_S : seven.kim@lge.com kernel3.0 porting
+obj-$(CONFIG_FB_MSM_MIPI_LG4573B_VIDEO_WVGA_PT) += mipi_lg4573b_video_wvga_pt.o
+#LGE_CHANGE_E : seven.kim@lge.com kernel3.0 porting
+#LGE_CHANGE_S : sohyun.nam@lge.com ,2012-12-20
+obj-$(CONFIG_FB_MSM_MIPI_HX8379A_VIDEO_WVGA_PT) += mipi_hx8379a_video_wvga_pt.o
+#LGE_CHANGE_S : sohyun.nam@lge.com ,2012-12-20
 endif
 
 obj-$(CONFIG_FB_MSM_LCDC_PANEL) += lcdc_panel.o
@@ -204,7 +190,6 @@ obj-$(CONFIG_FB_MSM_LVDS_CHIMEI_WXGA) += lvds_chimei_wxga.o
 obj-$(CONFIG_FB_MSM_LVDS_FRC_FHD) += lvds_frc_fhd.o
 obj-$(CONFIG_FB_MSM_HDMI_MSM_PANEL) += hdmi_msm.o
 obj-$(CONFIG_FB_MSM_EXT_INTERFACE_COMMON) += external_common.o
-
 obj-$(CONFIG_FB_MSM_LCDC_TRULY_HVGA_IPS3P2335) += lcdc_truly_ips3p2335.o
 
 obj-$(CONFIG_FB_MSM_TVOUT) += tvout_msm.o

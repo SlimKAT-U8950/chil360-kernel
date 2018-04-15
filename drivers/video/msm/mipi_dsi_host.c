@@ -38,10 +38,10 @@
 #include "mipi_dsi.h"
 #include "mdp.h"
 #include "mdp4.h"
-#include "hw_lcd_common.h"
 
 static struct completion dsi_dma_comp;
 static struct completion dsi_mdp_comp;
+static struct completion dsi_video_comp;
 static struct dsi_buf dsi_tx_buf;
 static struct dsi_buf dsi_rx_buf;
 static spinlock_t dsi_irq_lock;
@@ -93,6 +93,7 @@ void mipi_dsi_init(void)
 {
 	init_completion(&dsi_dma_comp);
 	init_completion(&dsi_mdp_comp);
+	init_completion(&dsi_video_comp);
 	mipi_dsi_buf_alloc(&dsi_tx_buf, DSI_BUF_SIZE);
 	mipi_dsi_buf_alloc(&dsi_rx_buf, DSI_BUF_SIZE);
 	spin_lock_init(&dsi_irq_lock);
@@ -1009,7 +1010,8 @@ void mipi_dsi_op_mode_config(int mode)
 	dsi_ctrl &= ~0x07;
 	if (mode == DSI_VIDEO_MODE) {
 		dsi_ctrl |= 0x03;
-		intr_ctrl = DSI_INTR_CMD_DMA_DONE_MASK;
+		intr_ctrl = (DSI_INTR_CMD_DMA_DONE_MASK |
+					DSI_INTR_VIDEO_DONE_MASK);
 	} else {		/* command mode */
 		dsi_ctrl |= 0x05;
 		intr_ctrl = DSI_INTR_CMD_DMA_DONE_MASK | DSI_INTR_ERROR_MASK |
@@ -1021,6 +1023,18 @@ void mipi_dsi_op_mode_config(int mode)
 	MIPI_OUTP(MIPI_DSI_BASE + 0x010c, intr_ctrl); /* DSI_INTL_CTRL */
 	MIPI_OUTP(MIPI_DSI_BASE + 0x0000, dsi_ctrl);
 	wmb();
+}
+void mipi_dsi_wait4video_done(void)
+{
+	unsigned long flag;
+
+	spin_lock_irqsave(&dsi_mdp_lock, flag);
+	INIT_COMPLETION(dsi_video_comp);
+	mipi_dsi_enable_irq(DSI_VIDEO_TERM);
+	spin_unlock_irqrestore(&dsi_mdp_lock, flag);
+
+        wait_for_completion_timeout(&dsi_video_comp,
+             msecs_to_jiffies(VSYNC_PERIOD * 4));
 }
 
 void mipi_dsi_mdp_busy_wait(struct msm_fb_data_type *mfd)
@@ -1199,7 +1213,6 @@ static struct dsi_cmd_desc pkt_size_cmd[] = {
  *
  * ov_mutex need to be acquired before call this function.
  */
-/* Add lcd panel type */
 int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 			struct dsi_buf *tp, struct dsi_buf *rp,
 			struct dsi_cmd_desc *cmds, int rlen)
@@ -1260,12 +1273,7 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 	mipi_dsi_enable_irq(DSI_CMD_TERM);
 	mipi_dsi_buf_init(tp);
 	mipi_dsi_cmd_dma_add(tp, cmds);
-#if (LCD_HX8369A_TIANMA_ESD_SIGN || LCD_OTM8009A_CMI_ESD_SIGN)
-	if(MIPI_CMD_HX8369A_TIANMA_FWVGA == get_lcd_panel_type()
-	|| MIPI_CMD_OTM8009A_CHIMEI_WVGA == get_lcd_panel_type()
-	|| MIPI_CMD_OTM8009A_CHIMEI_FWVGA == get_lcd_panel_type())
-		mipi_set_tx_power_mode(0);//entry high speed mode  
-#endif
+
 	/* transmit read comamnd to client */
 	mipi_dsi_cmd_dma_tx(tp);
 
@@ -1283,12 +1291,7 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 		 */
 		rp->data += 2;
 	}
-#if (LCD_HX8369A_TIANMA_ESD_SIGN || LCD_OTM8009A_CMI_ESD_SIGN)
-	if(MIPI_CMD_HX8369A_TIANMA_FWVGA == get_lcd_panel_type()
-	|| MIPI_CMD_OTM8009A_CHIMEI_WVGA == get_lcd_panel_type()
-	|| MIPI_CMD_OTM8009A_CHIMEI_FWVGA == get_lcd_panel_type())
-		mipi_set_tx_power_mode(1);//entry low power mode  
-#endif
+
 	mipi_dsi_cmd_dma_rx(rp, cnt);
 
 	spin_lock_irqsave(&dsi_mdp_lock, flag);
@@ -1330,15 +1333,9 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 		break;
 	}
 
-	#if (LCD_HX8369A_TIANMA_ESD_SIGN || LCD_OTM8009A_CMI_ESD_SIGN)
-	if(MIPI_CMD_HX8369A_TIANMA_FWVGA == get_lcd_panel_type()
-	|| MIPI_CMD_OTM8009A_CHIMEI_WVGA == get_lcd_panel_type()
-	|| MIPI_CMD_OTM8009A_CHIMEI_FWVGA == get_lcd_panel_type())
-		mipi_set_tx_power_mode(0);//entry high speed mode  
-#endif
-
 	return rp->len;
 }
+
 int mipi_dsi_cmds_rx_new(struct dsi_buf *tp, struct dsi_buf *rp,
 			struct dcs_cmd_req *req, int rlen)
 {
@@ -1458,12 +1455,11 @@ int mipi_dsi_cmds_rx_new(struct dsi_buf *tp, struct dsi_buf *rp,
 
 	return rp->len;
 }
-/* Add lcd panel type */
+
 int mipi_dsi_cmd_dma_tx(struct dsi_buf *tp)
 {
 
 	unsigned long flags;
-    lcd_panel_type panel_type = get_lcd_panel_type();
 
 #ifdef DSI_HOST_DEBUG
 	int i;
@@ -1500,27 +1496,13 @@ int mipi_dsi_cmd_dma_tx(struct dsi_buf *tp)
 	wmb();
 	spin_unlock_irqrestore(&dsi_mdp_lock, flags);
 
-	/* remove otm8009a panel */
-	/* remove hx8369a panel */
-    /* judge the panel type */
-    if( ((MIPI_CMD_OTM8009A_CHIMEI_WVGA == panel_type) && LCD_OTM8009A_CMI_ESD_SIGN)
-        || (MIPI_CMD_NT35510_BOE_FWVGA == panel_type)
-        || (MIPI_CMD_NT35510_BOE_WVGA == panel_type)
-        || (MIPI_CMD_NT35510_CHIMEI_WVGA == panel_type)
-        ||(MIPI_CMD_OTM8009A_CHIMEI_WVGA == panel_type))
-    {
-        /* set the time out. thread will go on beyond the time restriction */
-        wait_for_completion_timeout(&dsi_dma_comp,HZ/10);
-    }
-    else
-    {        
-        wait_for_completion(&dsi_dma_comp);
-    }
+	wait_for_completion(&dsi_dma_comp);
 
 	dma_unmap_single(&dsi_dev, tp->dmap, tp->len, DMA_TO_DEVICE);
 	tp->dmap = 0;
 	return tp->len;
 }
+
 int mipi_dsi_cmd_dma_rx(struct dsi_buf *rp, int rlen)
 {
 	uint32 *lp, data;
@@ -1548,11 +1530,19 @@ int mipi_dsi_cmd_dma_rx(struct dsi_buf *rp, int rlen)
 	return rlen;
 }
 
+static void mipi_dsi_wait4video_eng_busy(void)
+{
+       mipi_dsi_wait4video_done();
+	/* delay 4 ms to skip BLLP */
+	usleep(4000);
+}
+
+
 void mipi_dsi_cmd_mdp_busy(void)
 {
 	u32 status;
 	unsigned long flags;
-	int need_wait;
+	int need_wait = 0;
 
 	spin_lock_irqsave(&dsi_mdp_lock, flags);
 	status = MIPI_INP(MIPI_DSI_BASE + 0x0004);/* DSI_STATUS */
@@ -1622,6 +1612,7 @@ void mipi_dsi_cmdlist_rx(struct dcs_cmd_req *req)
 void mipi_dsi_cmdlist_commit(int from_mdp)
 {
 	struct dcs_cmd_req *req;
+        u32 dsi_ctrl;
 
 	mutex_lock(&cmd_mutex);
 	req = mipi_dsi_cmdlist_get();
@@ -1631,6 +1622,20 @@ void mipi_dsi_cmdlist_commit(int from_mdp)
 	}
 
 	pr_debug("%s:  from_mdp=%d pid=%d\n", __func__, from_mdp, current->pid);
+
+        dsi_ctrl = MIPI_INP(MIPI_DSI_BASE + 0x0000);
+	if (dsi_ctrl & 0x02) {
+		/* video mode, make sure video engine is busy
+		 * so dcs command will be sent at start of BLLP
+		 */
+		mipi_dsi_wait4video_eng_busy();
+	} else {
+		/* command mode */
+		if (!from_mdp) { /* cmdlist_put */
+			/* make sure dsi_cmd_mdp is idle */
+			mipi_dsi_cmd_mdp_busy();
+		}
+	}
 
 	if (!from_mdp) { /* from put */
 		/* make sure dsi_cmd_mdp is idle */
@@ -1777,9 +1782,10 @@ irqreturn_t mipi_dsi_isr(int irq, void *ptr)
 	}
 
 	if (isr & DSI_INTR_VIDEO_DONE) {
-		/*
-		* do something  here
-		*/
+		spin_lock(&dsi_mdp_lock);
+		mipi_dsi_disable_irq_nosync(DSI_VIDEO_TERM);
+		complete(&dsi_video_comp);
+		spin_unlock(&dsi_mdp_lock);
 	}
 
 	if (isr & DSI_INTR_CMD_DMA_DONE) {

@@ -18,17 +18,6 @@
 #include "msm_fb.h"
 #include "tvenc.h"
 #include "external_common.h"
-#ifdef CONFIG_HUAWEI_KERNEL
-#define TVOUT_NTSC 0
-#define TVOUT_PAL 1
-#endif
-//#define TVOUT_DEBUG
-#ifdef  TVOUT_DEBUG
-#define TV_OUT_DEBUG(fmt, args...) printk(KERN_ERR fmt, ##args)
-#else
-#define TV_OUT_DEBUG(fmt, args...)
-#endif
-boolean tv_cable_connected = FALSE;
 
 #define TVOUT_HPD_DUTY_CYCLE 3000
 
@@ -91,7 +80,6 @@ static void tvout_check_status()
 	}
 
 	if (tvout_msm_state->hpd_int_status & BIT(2)) {
-		tv_cable_connected = FALSE;
 		DEV_DBG("%s: cable plug-out\n", __func__);
 		mutex_lock(&external_common_state_hpd_mutex);
 		external_common_state->hpd_state = FALSE;
@@ -100,7 +88,6 @@ static void tvout_check_status()
 				KOBJ_OFFLINE);
 		tvout_msm_state->prev_hpd_int_status = BIT(2);
 	} else if (tvout_msm_state->hpd_int_status & BIT(0)) {
-		tv_cable_connected = TRUE;
 		DEV_DBG("%s: cable plug-in\n", __func__);
 		mutex_lock(&external_common_state_hpd_mutex);
 		external_common_state->hpd_state = TRUE;
@@ -245,6 +232,7 @@ static void tvout_msm_hpd_work_timer(unsigned long data)
 static int tvout_on(struct platform_device *pdev)
 {
 	uint32 reg = 0;
+	uint32 userformat = 0;
 	struct fb_var_screeninfo *var;
 	struct msm_fb_data_type *mfd = platform_get_drvdata(pdev);
 
@@ -265,18 +253,9 @@ static int tvout_on(struct platform_device *pdev)
 #endif
 
 	var = &mfd->fbi->var;
-#ifdef CONFIG_HUAWEI_KERNEL
-	if(TVOUT_PAL == var->reserved[4])
-	{
-		tvout_msm_state->video_mode = PAL_M;
-	}
-	else
-	{
-		tvout_msm_state->video_mode = NTSC_M;
-	}
-#endif
-	if (var->reserved[3] >= NTSC_M && var->reserved[3] <= PAL_N)
-		external_common_state->video_resolution = var->reserved[3];
+	userformat = var->reserved[3] >> 16;
+	if (userformat >= NTSC_M && userformat <= PAL_N)
+		external_common_state->video_resolution = userformat;
 
 	tvout_msm_state->pdev = pdev;
 	if (del_timer(&tvout_msm_state->hpd_work_timer))
