@@ -34,105 +34,6 @@
 
 #include "mm.h"
 
-/*
- * The DMA API is built upon the notion of "buffer ownership".  A buffer
- * is either exclusively owned by the CPU (and therefore may be accessed
- * by it) or exclusively owned by the DMA device.  These helper functions
- * represent the transitions between these two ownership states.
- *
- * Note, however, that on later ARMs, this notion does not work due to
- * speculative prefetches.  We model our approach on the assumption that
- * the CPU does do speculative prefetches, which means we clean caches
- * before transfers and delay cache invalidation until transfer completion.
- *
- */
-static void __dma_page_cpu_to_dev(struct page *, unsigned long,
-		size_t, enum dma_data_direction);
-static void __dma_page_dev_to_cpu(struct page *, unsigned long,
-		size_t, enum dma_data_direction);
-
-/**
- * arm_dma_map_page - map a portion of a page for streaming DMA
- * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
- * @page: page that buffer resides in
- * @offset: offset into page for start of buffer
- * @size: size of buffer to map
- * @dir: DMA transfer direction
- *
- * Ensure that any data held in the cache is appropriately discarded
- * or written back.
- *
- * The device owns this memory once this call has completed.  The CPU
- * can regain ownership by calling dma_unmap_page().
- */
-static dma_addr_t arm_dma_map_page(struct device *dev, struct page *page,
-	     unsigned long offset, size_t size, enum dma_data_direction dir,
-	     struct dma_attrs *attrs)
-{
-	if (!arch_is_coherent())
-		__dma_page_cpu_to_dev(page, offset, size, dir);
-	return pfn_to_dma(dev, page_to_pfn(page)) + offset;
-}
-
-/**
- * arm_dma_unmap_page - unmap a buffer previously mapped through dma_map_page()
- * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
- * @handle: DMA address of buffer
- * @size: size of buffer (same as passed to dma_map_page)
- * @dir: DMA transfer direction (same as passed to dma_map_page)
- *
- * Unmap a page streaming mode DMA translation.  The handle and size
- * must match what was provided in the previous dma_map_page() call.
- * All other usages are undefined.
- *
- * After this call, reads by the CPU to the buffer are guaranteed to see
- * whatever the device wrote there.
- */
-static void arm_dma_unmap_page(struct device *dev, dma_addr_t handle,
-		size_t size, enum dma_data_direction dir,
-		struct dma_attrs *attrs)
-{
-	if (!arch_is_coherent())
-		__dma_page_dev_to_cpu(pfn_to_page(dma_to_pfn(dev, handle)),
-				      handle & ~PAGE_MASK, size, dir);
-}
-
-static void arm_dma_sync_single_for_cpu(struct device *dev,
-		dma_addr_t handle, size_t size, enum dma_data_direction dir)
-{
-	unsigned int offset = handle & (PAGE_SIZE - 1);
-	struct page *page = pfn_to_page(dma_to_pfn(dev, handle-offset));
-	if (!arch_is_coherent())
-		__dma_page_dev_to_cpu(page, offset, size, dir);
-}
-
-static void arm_dma_sync_single_for_device(struct device *dev,
-		dma_addr_t handle, size_t size, enum dma_data_direction dir)
-{
-	unsigned int offset = handle & (PAGE_SIZE - 1);
-	struct page *page = pfn_to_page(dma_to_pfn(dev, handle-offset));
-	if (!arch_is_coherent())
-		__dma_page_cpu_to_dev(page, offset, size, dir);
-}
-
-static int arm_dma_set_mask(struct device *dev, u64 dma_mask);
-
-struct dma_map_ops arm_dma_ops = {
-	.alloc			= arm_dma_alloc,
-	.free			= arm_dma_free,
-	.mmap			= arm_dma_mmap,
-	.map_page		= arm_dma_map_page,
-	.unmap_page		= arm_dma_unmap_page,
-	.map_sg			= arm_dma_map_sg,
-	.unmap_sg		= arm_dma_unmap_sg,
-	.sync_single_for_cpu	= arm_dma_sync_single_for_cpu,
-	.sync_single_for_device	= arm_dma_sync_single_for_device,
-	.sync_sg_for_cpu	= arm_dma_sync_sg_for_cpu,
-	.sync_sg_for_device	= arm_dma_sync_sg_for_device,
-	.set_dma_mask		= arm_dma_set_mask,
-};
-EXPORT_SYMBOL(arm_dma_ops);
-
 static u64 get_coherent_dma_mask(struct device *dev)
 {
 	u64 mask = (u64)arm_dma_limit;
@@ -280,14 +181,14 @@ static int __init consistent_init(void)
 
 		pud = pud_alloc(&init_mm, pgd, base);
 		if (!pud) {
-			pr_err("%s: no pud tables\n", __func__);
+			printk(KERN_ERR "%s: no pud tables\n", __func__);
 			ret = -ENOMEM;
 			break;
 		}
 
 		pmd = pmd_alloc(&init_mm, pud, base);
 		if (!pmd) {
-			pr_err("%s: no pmd tables\n", __func__);
+			printk(KERN_ERR "%s: no pmd tables\n", __func__);
 			ret = -ENOMEM;
 			break;
 		}
@@ -295,7 +196,7 @@ static int __init consistent_init(void)
 
 		pte = pte_alloc_kernel(pmd, base);
 		if (!pte) {
-			pr_err("%s: no pte tables\n", __func__);
+			printk(KERN_ERR "%s: no pte tables\n", __func__);
 			ret = -ENOMEM;
 			break;
 		}
@@ -410,7 +311,7 @@ __dma_alloc_remap(struct page *page, size_t size, gfp_t gfp, pgprot_t prot,
 	int bit;
 
 	if (!consistent_pte) {
-		pr_err("%s: not initialised\n", __func__);
+		printk(KERN_ERR "%s: not initialised\n", __func__);
 		dump_stack();
 		return NULL;
 	}
@@ -469,14 +370,14 @@ static void __dma_free_remap(void *cpu_addr, size_t size)
 
 	c = arm_vmregion_find_remove(&consistent_head, (unsigned long)cpu_addr);
 	if (!c) {
-		pr_err("%s: trying to free invalid coherent area: %p\n",
+		printk(KERN_ERR "%s: trying to free invalid coherent area: %p\n",
 		       __func__, cpu_addr);
 		dump_stack();
 		return;
 	}
 
 	if ((c->vm_end - c->vm_start) != size) {
-		pr_err("%s: freeing wrong coherent size (%ld != %d)\n",
+		printk(KERN_ERR "%s: freeing wrong coherent size (%ld != %d)\n",
 		       __func__, c->vm_end - c->vm_start, size);
 		dump_stack();
 		size = c->vm_end - c->vm_start;
@@ -498,8 +399,8 @@ static void __dma_free_remap(void *cpu_addr, size_t size)
 		}
 
 		if (pte_none(pte) || !pte_present(pte))
-			pr_crit("%s: bad page in kernel page table\n",
-				__func__);
+			printk(KERN_CRIT "%s: bad page in kernel page table\n",
+			       __func__);
 	} while (size -= PAGE_SIZE);
 
 	flush_tlb_kernel_range(c->vm_start, c->vm_end);
@@ -623,14 +524,6 @@ static void __free_from_contiguous(struct device *dev, struct page *page,
 	dma_release_from_contiguous(dev, page, size >> PAGE_SHIFT);
 }
 
-static inline pgprot_t __get_dma_pgprot(struct dma_attrs *attrs, pgprot_t prot)
-{
-	prot = dma_get_attr(DMA_ATTR_WRITE_COMBINE, attrs) ?
-			    pgprot_writecombine(prot) :
-			    pgprot_dmacoherent(prot);
-	return prot;
-}
-
 #define nommu() 0
 
 #else	/* !CONFIG_MMU */
@@ -643,7 +536,6 @@ static inline pgprot_t __get_dma_pgprot(struct dma_attrs *attrs, pgprot_t prot)
 #define __free_from_pool(cpu_addr, size)			0
 #define __free_from_contiguous(dev, page, size)			do { } while (0)
 #define __dma_free_remap(cpu_addr, size)			do { } while (0)
-#define __get_dma_pgprot(attrs, prot)				__pgprot(0)
 
 #endif	/* CONFIG_MMU */
 
@@ -714,34 +606,39 @@ static void *__dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
  * Allocate DMA-coherent memory space and return both the kernel remapped
  * virtual and bus address for that space.
  */
-void *arm_dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
-		    gfp_t gfp, struct dma_attrs *attrs)
+void *dma_alloc_coherent(struct device *dev, size_t size, dma_addr_t *handle,
+			 gfp_t gfp)
 {
-	pgprot_t prot = __get_dma_pgprot(attrs, pgprot_kernel);
 	void *memory;
 
 	if (dma_alloc_from_coherent(dev, size, handle, &memory))
 		return memory;
 
-	return __dma_alloc(dev, size, handle, gfp, prot,
+	return __dma_alloc(dev, size, handle, gfp,
+			   pgprot_dmacoherent(pgprot_kernel),
 			   __builtin_return_address(0));
 }
+EXPORT_SYMBOL(dma_alloc_coherent);
 
 /*
- * Create userspace mapping for the DMA-coherent memory.
+ * Allocate a writecombining region, in much the same way as
+ * dma_alloc_coherent above.
  */
-int arm_dma_mmap(struct device *dev, struct vm_area_struct *vma,
-		 void *cpu_addr, dma_addr_t dma_addr, size_t size,
-		 struct dma_attrs *attrs)
+void *
+dma_alloc_writecombine(struct device *dev, size_t size, dma_addr_t *handle, gfp_t gfp)
+{
+	return __dma_alloc(dev, size, handle, gfp,
+			   pgprot_writecombine(pgprot_kernel),
+			   __builtin_return_address(0));
+}
+EXPORT_SYMBOL(dma_alloc_writecombine);
+
+static int dma_mmap(struct device *dev, struct vm_area_struct *vma,
+		    void *cpu_addr, dma_addr_t dma_addr, size_t size)
 {
 	int ret = -ENXIO;
 #ifdef CONFIG_MMU
 	unsigned long pfn = dma_to_pfn(dev, dma_addr);
-	vma->vm_page_prot = __get_dma_pgprot(attrs, vma->vm_page_prot);
-
-	if (dma_mmap_from_coherent(dev, vma, cpu_addr, size, &ret))
-		return ret;
-
 	ret = remap_pfn_range(vma, vma->vm_start,
 			      pfn + vma->vm_pgoff,
 			      vma->vm_end - vma->vm_start,
@@ -751,11 +648,27 @@ int arm_dma_mmap(struct device *dev, struct vm_area_struct *vma,
 	return ret;
 }
 
+int dma_mmap_coherent(struct device *dev, struct vm_area_struct *vma,
+		      void *cpu_addr, dma_addr_t dma_addr, size_t size)
+{
+	vma->vm_page_prot = pgprot_dmacoherent(vma->vm_page_prot);
+	return dma_mmap(dev, vma, cpu_addr, dma_addr, size);
+}
+EXPORT_SYMBOL(dma_mmap_coherent);
+
+int dma_mmap_writecombine(struct device *dev, struct vm_area_struct *vma,
+			  void *cpu_addr, dma_addr_t dma_addr, size_t size)
+{
+	vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+	return dma_mmap(dev, vma, cpu_addr, dma_addr, size);
+}
+EXPORT_SYMBOL(dma_mmap_writecombine);
+
+
 /*
  * Free a buffer as defined by the above mapping.
  */
-void arm_dma_free(struct device *dev, size_t size, void *cpu_addr,
-		  dma_addr_t handle, struct dma_attrs *attrs)
+void dma_free_coherent(struct device *dev, size_t size, void *cpu_addr, dma_addr_t handle)
 {
 	struct page *page = pfn_to_page(dma_to_pfn(dev, handle));
 
@@ -779,6 +692,7 @@ void arm_dma_free(struct device *dev, size_t size, void *cpu_addr,
 		__free_from_contiguous(dev, page, size);
 	}
 }
+EXPORT_SYMBOL(dma_free_coherent);
 
 /*
  * Make an area consistent for devices.
@@ -873,13 +787,7 @@ static void dma_cache_maint_page(struct page *page, unsigned long offset,
 	} while (left);
 }
 
-/*
- * Make an area consistent for devices.
- * Note: Drivers should NOT use this function directly, as it will break
- * platforms with CONFIG_DMABOUNCE.
- * Use the driver DMA support - see dma-mapping.h (dma_sync_*)
- */
-static void __dma_page_cpu_to_dev(struct page *page, unsigned long off,
+void ___dma_page_cpu_to_dev(struct page *page, unsigned long off,
 	size_t size, enum dma_data_direction dir)
 {
 	unsigned long paddr;
@@ -894,8 +802,9 @@ static void __dma_page_cpu_to_dev(struct page *page, unsigned long off,
 	}
 	/* FIXME: non-speculating: flush on bidirectional mappings? */
 }
+EXPORT_SYMBOL(___dma_page_cpu_to_dev);
 
-static void __dma_page_dev_to_cpu(struct page *page, unsigned long off,
+void ___dma_page_dev_to_cpu(struct page *page, unsigned long off,
 	size_t size, enum dma_data_direction dir)
 {
 	unsigned long paddr = page_to_phys(page) + off;
@@ -913,9 +822,10 @@ static void __dma_page_dev_to_cpu(struct page *page, unsigned long off,
 	if (dir != DMA_TO_DEVICE && off == 0 && size >= PAGE_SIZE)
 		set_bit(PG_dcache_clean, &page->flags);
 }
+EXPORT_SYMBOL(___dma_page_dev_to_cpu);
 
 /**
- * arm_dma_map_sg - map a set of SG buffers for streaming mode DMA
+ * dma_map_sg - map a set of SG buffers for streaming mode DMA
  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
  * @sg: list of buffers
  * @nents: number of buffers to map
@@ -930,29 +840,32 @@ static void __dma_page_dev_to_cpu(struct page *page, unsigned long off,
  * Device ownership issues as mentioned for dma_map_single are the same
  * here.
  */
-int arm_dma_map_sg(struct device *dev, struct scatterlist *sg, int nents,
-		enum dma_data_direction dir, struct dma_attrs *attrs)
+int dma_map_sg(struct device *dev, struct scatterlist *sg, int nents,
+		enum dma_data_direction dir)
 {
-	struct dma_map_ops *ops = get_dma_ops(dev);
 	struct scatterlist *s;
 	int i, j;
 
+	BUG_ON(!valid_dma_direction(dir));
+
 	for_each_sg(sg, s, nents, i) {
-		s->dma_address = ops->map_page(dev, sg_page(s), s->offset,
-						s->length, dir, attrs);
+		s->dma_address = __dma_map_page(dev, sg_page(s), s->offset,
+						s->length, dir);
 		if (dma_mapping_error(dev, s->dma_address))
 			goto bad_mapping;
 	}
+	debug_dma_map_sg(dev, sg, nents, nents, dir);
 	return nents;
 
  bad_mapping:
 	for_each_sg(sg, s, i, j)
-		ops->unmap_page(dev, sg_dma_address(s), sg_dma_len(s), dir, attrs);
+		__dma_unmap_page(dev, sg_dma_address(s), sg_dma_len(s), dir);
 	return 0;
 }
+EXPORT_SYMBOL(dma_map_sg);
 
 /**
- * arm_dma_unmap_sg - unmap a set of SG buffers mapped by dma_map_sg
+ * dma_unmap_sg - unmap a set of SG buffers mapped by dma_map_sg
  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
  * @sg: list of buffers
  * @nents: number of buffers to unmap (same as was passed to dma_map_sg)
@@ -961,55 +874,70 @@ int arm_dma_map_sg(struct device *dev, struct scatterlist *sg, int nents,
  * Unmap a set of streaming mode DMA translations.  Again, CPU access
  * rules concerning calls here are the same as for dma_unmap_single().
  */
-void arm_dma_unmap_sg(struct device *dev, struct scatterlist *sg, int nents,
-		enum dma_data_direction dir, struct dma_attrs *attrs)
+void dma_unmap_sg(struct device *dev, struct scatterlist *sg, int nents,
+		enum dma_data_direction dir)
 {
-	struct dma_map_ops *ops = get_dma_ops(dev);
 	struct scatterlist *s;
-
 	int i;
 
+	debug_dma_unmap_sg(dev, sg, nents, dir);
+
 	for_each_sg(sg, s, nents, i)
-		ops->unmap_page(dev, sg_dma_address(s), sg_dma_len(s), dir, attrs);
+		__dma_unmap_page(dev, sg_dma_address(s), sg_dma_len(s), dir);
 }
+EXPORT_SYMBOL(dma_unmap_sg);
 
 /**
- * arm_dma_sync_sg_for_cpu
+ * dma_sync_sg_for_cpu
  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
  * @sg: list of buffers
  * @nents: number of buffers to map (returned from dma_map_sg)
  * @dir: DMA transfer direction (same as was passed to dma_map_sg)
  */
-void arm_dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg,
+void dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg,
 			int nents, enum dma_data_direction dir)
 {
-	struct dma_map_ops *ops = get_dma_ops(dev);
 	struct scatterlist *s;
 	int i;
 
-	for_each_sg(sg, s, nents, i)
-		ops->sync_single_for_cpu(dev, sg_dma_address(s), s->length,
-					 dir);
+	for_each_sg(sg, s, nents, i) {
+		if (!dmabounce_sync_for_cpu(dev, sg_dma_address(s), 0,
+					    sg_dma_len(s), dir))
+			continue;
+
+		__dma_page_dev_to_cpu(sg_page(s), s->offset,
+				      s->length, dir);
+	}
+
+	debug_dma_sync_sg_for_cpu(dev, sg, nents, dir);
 }
+EXPORT_SYMBOL(dma_sync_sg_for_cpu);
 
 /**
- * arm_dma_sync_sg_for_device
+ * dma_sync_sg_for_device
  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
  * @sg: list of buffers
  * @nents: number of buffers to map (returned from dma_map_sg)
  * @dir: DMA transfer direction (same as was passed to dma_map_sg)
  */
-void arm_dma_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
+void dma_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
 			int nents, enum dma_data_direction dir)
 {
-	struct dma_map_ops *ops = get_dma_ops(dev);
 	struct scatterlist *s;
 	int i;
 
-	for_each_sg(sg, s, nents, i)
-		ops->sync_single_for_device(dev, sg_dma_address(s), s->length,
-					    dir);
+	for_each_sg(sg, s, nents, i) {
+		if (!dmabounce_sync_for_device(dev, sg_dma_address(s), 0,
+					sg_dma_len(s), dir))
+			continue;
+
+		__dma_page_cpu_to_dev(sg_page(s), s->offset,
+				      s->length, dir);
+	}
+
+	debug_dma_sync_sg_for_device(dev, sg, nents, dir);
 }
+EXPORT_SYMBOL(dma_sync_sg_for_device);
 
 /*
  * Return whether the given device DMA address mask can be supported
@@ -1025,15 +953,18 @@ int dma_supported(struct device *dev, u64 mask)
 }
 EXPORT_SYMBOL(dma_supported);
 
-static int arm_dma_set_mask(struct device *dev, u64 dma_mask)
+int dma_set_mask(struct device *dev, u64 dma_mask)
 {
 	if (!dev->dma_mask || !dma_supported(dev, dma_mask))
 		return -EIO;
 
+#ifndef CONFIG_DMABOUNCE
 	*dev->dma_mask = dma_mask;
+#endif
 
 	return 0;
 }
+EXPORT_SYMBOL(dma_set_mask);
 
 #define PREALLOC_DMA_DEBUG_ENTRIES	4096
 
